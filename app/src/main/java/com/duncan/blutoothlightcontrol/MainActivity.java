@@ -5,12 +5,15 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
+import android.content.res.Resources;
+import android.graphics.Color;
+import android.graphics.drawable.Drawable;
+import android.graphics.drawable.GradientDrawable;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
-import android.os.Handler;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -18,7 +21,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.UUID;
 
@@ -26,15 +28,13 @@ public class MainActivity extends Activity implements SensorEventListener {
 
     // SPP UUID service - this should work for most devices
     private static final UUID BTMODULEUUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
-    final int handlerState = 0;                        //used to identify handler message
-    TextView txtString, txtStringLength, xCoor, yCoor, zCoor;
-    Button test;
-    Handler bluetoothIn;
+    TextView redVal, greenVal, blueVal, red, green, blue, circle;
+    Button changeMode;
     private BluetoothAdapter btAdapter = null;
-    private StringBuilder recDataString = new StringBuilder();
     private BluetoothSocket btSocket = null;
     private ConnectedThread mConnectedThread;
     private boolean posMode = false;
+    private boolean notInterupted;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -42,33 +42,53 @@ public class MainActivity extends Activity implements SensorEventListener {
 
         setContentView(R.layout.activity_main);
 
-        xCoor = (TextView) findViewById(R.id.xcoor);
-        yCoor = (TextView) findViewById(R.id.ycoor);
-        zCoor = (TextView) findViewById(R.id.zcoor);
-        test = (Button) findViewById(R.id.test);
-        txtString = (TextView) findViewById(R.id.txtString);
-        txtStringLength = (TextView) findViewById(R.id.testView1);
+        redVal = (TextView) findViewById(R.id.red_value);
+        greenVal = (TextView) findViewById(R.id.green_value);
+        blueVal = (TextView) findViewById(R.id.blue_value);
+        red = (TextView) findViewById(R.id.red);
+        green = (TextView) findViewById(R.id.green);
+        blue = (TextView) findViewById(R.id.blue);
+        changeMode = (Button) findViewById(R.id.change_mode);
+        circle = (TextView) findViewById(R.id.circle);
 
         SensorManager sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         // add listener. The listener will be HelloAndroid (this) class
 
         sensorManager.registerListener(this,
                 sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER),
-               SensorManager.SENSOR_DELAY_NORMAL);
+                SensorManager.SENSOR_DELAY_NORMAL);
 
-        test.setOnClickListener(new View.OnClickListener() {
+        changeMode.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                if(posMode){
+                if (posMode) {
                     posMode = false;
                     mConnectedThread.write("m");
-                }else {
+                    red.setText("Red Value: ");
+                    green.setText("Green Value: ");
+                    blue.setText("Blue Value: ");
+                } else {
                     posMode = true;
+                    red.setText("Green Position: ");
+                    green.setText("");
+                    blue.setText("");
+                    greenVal.setText("");
+                    blueVal.setText("");
+                    SetColorCirlce(0, 255, 0);
                     mConnectedThread.write("m");
                 }
             }
         });
         btAdapter = BluetoothAdapter.getDefaultAdapter();       // get Bluetooth adapter
         checkBTState();
+    }
+
+    private void SetColorCirlce(int i, int j, int k) {
+        Resources res = getResources();
+        final Drawable drawable = res.getDrawable(R.drawable.coloured_circle);
+        ((GradientDrawable) drawable).setColor(Color.rgb(i, j, k));
+        drawable.mutate();
+
+        circle.setCompoundDrawablesWithIntrinsicBounds(null, null, drawable, null);
     }
 
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
@@ -79,15 +99,18 @@ public class MainActivity extends Activity implements SensorEventListener {
 
         // check sensor type
         if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
-            if (posMode){
+            if (posMode) {
                 float x = event.values[0];
                 int xi = (int) Math.round((x + 10) * 2.5);
-                if (xi >=50){
-                    xi =49;
+                if (xi > 49) {
+                    xi = 49;
                 }
-                xCoor.setText("X: " + xi);
-                mConnectedThread.write(xi+";");
-            }else {
+                if (xi < 1) {
+                    xi = 0;
+                }
+                redVal.setText(Integer.toString(xi));
+                mConnectedThread.write(xi + ";");
+            } else {
                 float x = event.values[0];
                 float y = event.values[1];
                 float z = event.values[2];
@@ -104,10 +127,20 @@ public class MainActivity extends Activity implements SensorEventListener {
                 if (zi > 255) {
                     zi = 255;
                 }
+                if (xi < 0) {
+                    xi = 0;
+                }
+                if (yi < 0) {
+                    yi = 0;
+                }
+                if (zi < 0) {
+                    zi = 0;
+                }
 
-                xCoor.setText("X: " + xi);
-                yCoor.setText("Y: " + yi);
-                zCoor.setText("Z: " + zi);
+                redVal.setText(Integer.toString(xi));
+                greenVal.setText(Integer.toString(yi));
+                blueVal.setText(Integer.toString(zi));
+                SetColorCirlce(xi, yi, zi);
                 mConnectedThread.write(xi + "," + yi + "," + zi + ";");
             }
         }
@@ -148,12 +181,9 @@ public class MainActivity extends Activity implements SensorEventListener {
                 //insert code to deal with this
             }
         }
+        notInterupted = true;
         mConnectedThread = new ConnectedThread(btSocket);
         mConnectedThread.start();
-
-        //I send a character when resuming.beginning transmission to check device is connected
-        //If it is not an exception will be thrown in the write method and finish() will be called
-        //mConnectedThread.write("x");
     }
 
     @Override
@@ -164,6 +194,7 @@ public class MainActivity extends Activity implements SensorEventListener {
             //Don't leave Bluetooth sockets open when leaving activity
             btSocket.close();
             mConnectedThread.interrupt();
+            notInterupted = false;
             Log.d("Main Activity", "Thread interrupted");
         } catch (IOException e2) {
             Log.d("Main Activity", "Write Fail");
@@ -185,53 +216,35 @@ public class MainActivity extends Activity implements SensorEventListener {
 
     //create new class for connect thread
     private class ConnectedThread extends Thread {
-        private final InputStream mmInStream;
         private final OutputStream mmOutStream;
 
         //creation of the connect thread
         public ConnectedThread(BluetoothSocket socket) {
-            InputStream tmpIn = null;
             OutputStream tmpOut = null;
 
             try {
                 //Create I/O streams for connection
-                tmpIn = socket.getInputStream();
                 tmpOut = socket.getOutputStream();
             } catch (IOException e) {
                 Toast.makeText(getBaseContext(), "ConnectedThread Fail", Toast.LENGTH_LONG).show();
             }
-
-            mmInStream = tmpIn;
             mmOutStream = tmpOut;
-        }
-
-        public void run() {
-            byte[] buffer = new byte[256];
-            int bytes;
-
-            // Keep looping to listen for received messages
-            while (true) {
-                try {
-                    bytes = mmInStream.read(buffer);            //read bytes from input buffer
-                    String readMessage = new String(buffer, 0, bytes);
-                    // Send the obtained bytes to the UI Activity via handler
-                    bluetoothIn.obtainMessage(handlerState, bytes, -1, readMessage).sendToTarget();
-                } catch (IOException e) {
-                    break;
-                }
-            }
         }
 
         //write method
         public void write(String input) {
-            byte[] msgBuffer = input.getBytes();           //converts entered String into bytes
-            try {
-                mmOutStream.write(msgBuffer);                //write bytes over BT connection via outstream
-            } catch (IOException e) {
-                //if you cannot write, close the application
-                Log.d("Main Activity", "Write Fail");
-                Toast.makeText(getBaseContext(), "Connection Failure", Toast.LENGTH_LONG).show();
-                finish();
+            if (notInterupted) {
+                byte[] msgBuffer = input.getBytes();
+                try {
+
+                    mmOutStream.write(msgBuffer);
+
+                } catch (IOException e) {
+                    //if you cannot write, close the application
+                    Log.d("Main Activity", "Write Fail");
+                    Toast.makeText(getBaseContext(), "Connection Failure", Toast.LENGTH_LONG).show();
+                    finish();
+                }
             }
         }
     }

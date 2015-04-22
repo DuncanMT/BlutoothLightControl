@@ -35,6 +35,7 @@ public class DeviceListActivity extends Activity {
             Intent i = new Intent(DeviceListActivity.this, MainActivity.class);
             i.putExtra(EXTRA_DEVICE_ADDRESS, address);
             startActivity(i);
+            DeviceListActivity.this.finish();
         }
     };
     TextView textView1;
@@ -50,7 +51,6 @@ public class DeviceListActivity extends Activity {
     @Override
     public void onResume() {
         super.onResume();
-        //***************
         checkBTState();
 
         textView1 = (TextView) findViewById(R.id.connecting);
