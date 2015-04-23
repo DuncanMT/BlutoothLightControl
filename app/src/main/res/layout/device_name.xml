@@ -1,4 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--******************************************************************************
+    Author	        :  Duncan Tyrell
+    Last Modified   :  23/4/2015
+    File		    :  device_name.xml
+    Target Hardware :  Samsung Galaxy S4 Running android 4.4.2
+    Version	        :  1.0.0
+
+    Description	    :  This file is the layout of the paired Bluetooth devices
+    shown on the DeviceListActivity
+**********************************************************************************-->
 <TextView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"

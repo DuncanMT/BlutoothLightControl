@@ -1,4 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--******************************************************************************
+Author	        :  Duncan Tyrell
+Last Modified   :  23/4/2015
+File		    :  coloured_circle.xml
+Target Hardware :  Samsung Galaxy S4 Running android 4.4.2
+Version	        :  1.0.0
+
+Description	    :  This file is the drawable for the circle in the MainActivity
+**********************************************************************************-->
 <shape xmlns:android="http://schemas.android.com/apk/res/android">
         <solid android:color="#ff390dff" />
         <corners
@@ -10,4 +19,4 @@
         <size
             android:height="250dp"
             android:width="250dp"/>
-    </shape>
+</shape>

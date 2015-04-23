@@ -1,3 +1,13 @@
+/*********************************************************************************
+ Author	            :  Duncan Tyrell
+ Last Modified      :  23/4/2015
+ File		        :  MainActivity.java
+ Target Hardware    :  Samsung Galaxy S4 Running android 4.4.2
+ Version	        :  1.0.0
+
+ Description	    :  This file is the source of the main activity of the Android
+ application and is responsible for all the apps main functionality
+ *********************************************************************************/
 package com.duncan.blutoothlightcontrol;
 
 import android.app.Activity;
@@ -26,7 +36,7 @@ import java.util.UUID;
 
 public class MainActivity extends Activity implements SensorEventListener {
 
-    // SPP UUID service - this should work for most devices
+    //Initialise Variables
     private static final UUID BTMODULEUUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
     TextView redVal, greenVal, blueVal, red, green, blue, circle;
     Button changeMode;
@@ -39,9 +49,9 @@ public class MainActivity extends Activity implements SensorEventListener {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         setContentView(R.layout.activity_main);
 
+        //Create variables to access the elements of the screen
         redVal = (TextView) findViewById(R.id.red_value);
         greenVal = (TextView) findViewById(R.id.green_value);
         blueVal = (TextView) findViewById(R.id.blue_value);
@@ -51,13 +61,13 @@ public class MainActivity extends Activity implements SensorEventListener {
         changeMode = (Button) findViewById(R.id.change_mode);
         circle = (TextView) findViewById(R.id.circle);
 
+        //Initialise the accelerometer
         SensorManager sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
-        // add listener. The listener will be HelloAndroid (this) class
-
         sensorManager.registerListener(this,
                 sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER),
                 SensorManager.SENSOR_DELAY_NORMAL);
 
+        //Listen for button presses
         changeMode.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 if (posMode) {
@@ -78,10 +88,12 @@ public class MainActivity extends Activity implements SensorEventListener {
                 }
             }
         });
-        btAdapter = BluetoothAdapter.getDefaultAdapter();       // get Bluetooth adapter
+        // get Bluetooth adapter
+        btAdapter = BluetoothAdapter.getDefaultAdapter();
         checkBTState();
     }
 
+    //Function for changing the colour of the circle
     private void SetColorCirlce(int i, int j, int k) {
         Resources res = getResources();
         final Drawable drawable = res.getDrawable(R.drawable.coloured_circle);
@@ -91,33 +103,41 @@ public class MainActivity extends Activity implements SensorEventListener {
         circle.setCompoundDrawablesWithIntrinsicBounds(null, null, drawable, null);
     }
 
+    //Forced to implement this function by the accelerometer, does nothing
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
 
     }
 
+    //Function runs when the a sensor is ready
     public void onSensorChanged(SensorEvent event) {
 
         // check sensor type
         if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
+            //If in moving LED mode else in change all mode
             if (posMode) {
+                //get X axis value then convert to range 0 - 255
                 float x = event.values[0];
                 int xi = (int) Math.round((x + 10) * 2.5);
+                //Check for rouge values
                 if (xi > 49) {
                     xi = 49;
                 }
                 if (xi < 1) {
                     xi = 0;
                 }
+                //Display the current position of the Green LED
                 redVal.setText(Integer.toString(xi));
+                //Send current position of green LED to Teensy
                 mConnectedThread.write(xi + ";");
             } else {
+                //Get x, y and z values then convert to range 0 -255
                 float x = event.values[0];
                 float y = event.values[1];
                 float z = event.values[2];
                 int xi = (int) Math.round((x + 10) * 12.75);
                 int yi = (int) Math.round((y + 10) * 12.75);
                 int zi = (int) Math.round((z + 10) * 12.75);
-
+                //Check for rouge values
                 if (xi > 255) {
                     xi = 255;
                 }
@@ -137,19 +157,22 @@ public class MainActivity extends Activity implements SensorEventListener {
                     zi = 0;
                 }
 
+                //Display current x, y and z values
                 redVal.setText(Integer.toString(xi));
                 greenVal.setText(Integer.toString(yi));
                 blueVal.setText(Integer.toString(zi));
+                //change teh colour of the circle
                 SetColorCirlce(xi, yi, zi);
+                //Send x, y  and z values to the teensy
                 mConnectedThread.write(xi + "," + yi + "," + zi + ";");
             }
         }
     }
 
-    private BluetoothSocket createBluetoothSocket(BluetoothDevice device) throws IOException {
 
-        return device.createRfcommSocketToServiceRecord(BTMODULEUUID);
+    private BluetoothSocket createBluetoothSocket(BluetoothDevice device) throws IOException {
         //creates secure outgoing connecetion with BT device using UUID
+        return device.createRfcommSocketToServiceRecord(BTMODULEUUID);
     }
 
     @Override
@@ -178,9 +201,10 @@ public class MainActivity extends Activity implements SensorEventListener {
             try {
                 btSocket.close();
             } catch (IOException e2) {
-                //insert code to deal with this
+                Log.d("MainActivity", "Socket Close fail");
             }
         }
+        //Set flag to true so the thread can run
         notInterupted = true;
         mConnectedThread = new ConnectedThread(btSocket);
         mConnectedThread.start();
@@ -191,7 +215,7 @@ public class MainActivity extends Activity implements SensorEventListener {
         super.onPause();
         Log.d("Main Activity", "Pause");
         try {
-            //Don't leave Bluetooth sockets open when leaving activity
+            //Stop thread from running this is still buggy, .interupt() should work but doesn't
             btSocket.close();
             mConnectedThread.interrupt();
             notInterupted = false;
@@ -203,7 +227,6 @@ public class MainActivity extends Activity implements SensorEventListener {
 
     //Checks that the Android device Bluetooth is available and prompts to be turned on if off
     private void checkBTState() {
-
         if (btAdapter == null) {
             Toast.makeText(getBaseContext(), "Device does not support bluetooth", Toast.LENGTH_LONG).show();
         } else {

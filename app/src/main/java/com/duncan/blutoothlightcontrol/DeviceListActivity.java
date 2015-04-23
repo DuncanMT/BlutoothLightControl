@@ -1,3 +1,13 @@
+/*********************************************************************************
+ Author	            :  Duncan Tyrell
+ Last Modified      :  23/4/2015
+ File		        :  DeviceListActivity.java
+ Target Hardware    :  Samsung Galaxy S4 Running android 4.4.2
+ Version	        :  1.0.0
+
+ Description	    :  This file is the source of the screen of the application
+ that allows the use to select the correct Bluetooth device to communicate with
+ *********************************************************************************/
 package com.duncan.blutoothlightcontrol;
 
 import android.app.Activity;
@@ -16,13 +26,12 @@ import android.widget.Toast;
 
 import java.util.Set;
 
-
 public class DeviceListActivity extends Activity {
     // Debugging for LOGCAT
     private static final String TAG = "DeviceListActivity";
     // EXTRA string to send on to mainactivity
     public static String EXTRA_DEVICE_ADDRESS = "device_address";
-    // Set up on-click listener for the list (nicked this - unsure)
+    // Set up on-click listener for the list
     private OnItemClickListener mDeviceClickListener = new OnItemClickListener() {
         public void onItemClick(AdapterView<?> av, View v, int arg2, long arg3) {
 
@@ -39,7 +48,6 @@ public class DeviceListActivity extends Activity {
         }
     };
     TextView textView1;
-    // Member fields
     private BluetoothAdapter mBtAdapter;
 
     @Override
@@ -53,25 +61,26 @@ public class DeviceListActivity extends Activity {
         super.onResume();
         checkBTState();
 
+        //Get variable for the textView element
         textView1 = (TextView) findViewById(R.id.connecting);
         textView1.setTextSize(40);
         textView1.setText(" ");
 
-        // Initialize array adapter for paired devices
+        //Initialize array adapter for paired devices
         ArrayAdapter<String> mPairedDevicesArrayAdapter = new ArrayAdapter<>(this, R.layout.device_name);
 
-        // Find and set up the ListView for paired devices
+        //Find and set up the ListView for paired devices
         ListView pairedListView = (ListView) findViewById(R.id.paired_devices);
         pairedListView.setAdapter(mPairedDevicesArrayAdapter);
         pairedListView.setOnItemClickListener(mDeviceClickListener);
 
-        // Get the local Bluetooth adapter
+        //Get the local Bluetooth adapter
         mBtAdapter = BluetoothAdapter.getDefaultAdapter();
 
-        // Get a set of currently paired devices and append to 'pairedDevices'
+        //Get a set of currently paired devices and append to 'pairedDevices'
         Set<BluetoothDevice> pairedDevices = mBtAdapter.getBondedDevices();
 
-        // Add previosuly paired devices to the array
+        //Add previously paired devices to the array
         if (pairedDevices.size() > 0) {
             findViewById(R.id.title_paired_devices).setVisibility(View.VISIBLE);//make title viewable
             for (BluetoothDevice device : pairedDevices) {
@@ -84,7 +93,7 @@ public class DeviceListActivity extends Activity {
     }
 
     private void checkBTState() {
-        // Check device has Bluetooth and that it is turned on
+        //Check device has Bluetooth and that it is turned on
         mBtAdapter = BluetoothAdapter.getDefaultAdapter(); // CHECK THIS OUT THAT IT WORKS!!!
         if (mBtAdapter == null) {
             Toast.makeText(getBaseContext(), "Device does not support Bluetooth", Toast.LENGTH_SHORT).show();
