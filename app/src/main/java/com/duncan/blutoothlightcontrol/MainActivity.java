@@ -70,14 +70,14 @@ public class MainActivity extends Activity implements SensorEventListener {
         //Listen for button presses
         changeMode.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                if (posMode) {
-                    posMode = false;
+                if (!posMode) {
+                    posMode = true;
                     mConnectedThread.write("m");
                     red.setText("Red Value: ");
                     green.setText("Green Value: ");
                     blue.setText("Blue Value: ");
                 } else {
-                    posMode = true;
+                    posMode = false;
                     red.setText("Green Position: ");
                     green.setText("");
                     blue.setText("");
@@ -114,7 +114,8 @@ public class MainActivity extends Activity implements SensorEventListener {
         // check sensor type
         if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
             //If in moving LED mode else in change all mode
-            if (posMode) {
+            if (!posMode) {
+                SetColorCirlce(0, 255, 0);
                 //get X axis value then convert to range 0 - 255
                 float x = event.values[0];
                 int xi = (int) Math.round((x + 10) * 2.5);
